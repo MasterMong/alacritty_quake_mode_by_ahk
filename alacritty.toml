@@ -1,0 +1,28 @@
+# Configuration for Alacritty Quake-mode in Windows
+# Save as: %APPDATA%\alacritty\alacritty.toml
+
+# [terminal.shell]
+# program = "ubuntu"
+
+# [font.normal]
+# family = "FiraCode Nerd Font"
+# style = "Regular"
+
+[window]
+# Remove dimensions to allow proper maximizing
+# dimensions = { columns = 82, lines = 24 } 
+padding = { x = 0, y = 0 }
+decorations = "None"
+opacity = 0.95
+dynamic_title = false
+position = { x = 0, y = 0 }
+startup_mode = "Maximized"
+
+# Ensure window takes full width
+option_as_alt = "Both"  # Optional: Better Alt key handling
+resize_increments = false  # Disable character-cell based resizing
+
+# Disable fullscreen keybinding
+[[keyboard.bindings]]
+key = "F11"
+action = "None"
