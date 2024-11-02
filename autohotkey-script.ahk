@@ -1,5 +1,5 @@
 #SingleInstance Force
-SetWorkingDir %A_ScriptDir%
+SetWorkingDir %USERPROFILE%
 
 ; Configuration
 global terminalPath := "C:\Program Files\Alacritty\alacritty.exe"
