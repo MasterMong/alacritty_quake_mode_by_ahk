@@ -6,9 +6,10 @@ global terminalPath := "C:\Program Files\Alacritty\alacritty.exe"
 global terminalTitle := "ahk_exe alacritty.exe"
 global isVisible := false
 global terminalHeightPercent := 100  ; Set terminal height as a percentage of screen height
+global hideOnFocusLost := false  ; Set to true to hide terminal when focus is lost
 
-; Win + ` to toggle terminal (# represents the Windows key)
-#`::
+; Win + Enter to toggle terminal (# represents the Windows key)
+#Enter::
     if (!WinExist(terminalTitle)) {
         Run, %terminalPath%
         WinWait, %terminalTitle%
@@ -57,7 +58,7 @@ ToggleTerminalVisibility() {
 }
 
 ; Optional: Hide terminal when focus is lost
-#if WinActive(terminalTitle)
+#if WinActive(terminalTitle) and hideOnFocusLost
 ~LButton::
     MouseGetPos,,, WindowUnderMouse
     if (WinExist(terminalTitle) and WindowUnderMouse != WinExist(terminalTitle)) {

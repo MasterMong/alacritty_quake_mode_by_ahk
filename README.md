@@ -32,7 +32,7 @@ This setup includes configuration for Alacritty terminal and an AutoHotkey scrip
 ## Usage
 
 - **Toggle Terminal Visibility:**
-  - Press `Win + \`` (Windows key + backtick) to toggle the visibility of the Alacritty terminal.
+  - Press `Win + Enter` to toggle the visibility of the Alacritty terminal.
 
 - **Hide Terminal When Focus is Lost (Optional):**
   - The script includes an optional feature to hide the terminal when it loses focus. This feature is enabled by default.
