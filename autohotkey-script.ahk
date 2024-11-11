@@ -68,16 +68,25 @@ SetupTerminal() {
     ; Calculate dimensions
     workAreaWidth := WorkAreaRight - WorkAreaLeft
     workAreaHeight := WorkAreaBottom - WorkAreaTop
-    
-    ; Calculate desired height as a percentage of the work area height
     desiredHeight := workAreaHeight * (terminalHeightPercent / 100)
     
-    ; Remove window borders and set size/position
-    WinSet, Style, -0xC00000, %terminalTitle%  ; Remove title bar
-    WinSet, Style, -0x40000, %terminalTitle%   ; Remove border/sizing
-    
-    ; Position window in work area (excludes taskbar)
-    WinMove, %terminalTitle%, , WorkAreaLeft, WorkAreaTop, workAreaWidth, desiredHeight
+    if (selectedTerminal = "wezterm") {
+        ; WezTerm specific handling
+        WinSet, Style, -0x80000, %terminalTitle%  ; Remove minimize/maximize buttons
+        WinSet, Style, -0x40000, %terminalTitle%  ; Remove sizing border
+        WinSet, Style, -0xC00000, %terminalTitle% ; Remove title bar
+        WinMove, %terminalTitle%, , WorkAreaLeft, WorkAreaTop, workAreaWidth, desiredHeight
+        
+        ; Force redraw to prevent visual glitches
+        WinHide, %terminalTitle%
+        Sleep, 10
+        WinShow, %terminalTitle%
+    } else {
+        ; Alacritty handling
+        WinSet, Style, -0xC00000, %terminalTitle%
+        WinSet, Style, -0x40000, %terminalTitle%
+        WinMove, %terminalTitle%, , WorkAreaLeft, WorkAreaTop, workAreaWidth, desiredHeight
+    }
     
     ; Ensure window is on top
     WinSet, AlwaysOnTop, On, %terminalTitle%
@@ -86,11 +95,20 @@ SetupTerminal() {
 ; Function to toggle terminal visibility
 ToggleTerminalVisibility() {
     if (isVisible) {
+        if (selectedTerminal = "wezterm") {
+            ; Store window position before hiding
+            WinGetPos, lastX, lastY, lastW, lastH, %terminalTitle%
+        }
         WinHide, %terminalTitle%
         isVisible := false
     } else {
         WinShow, %terminalTitle%
         WinActivate, %terminalTitle%
+        if (selectedTerminal = "wezterm") {
+            ; Restore last position and force redraw
+            WinMove, %terminalTitle%, , lastX, lastY, lastW, lastH
+            Sleep, 10
+        }
         SetupTerminal()
         isVisible := true
     }
