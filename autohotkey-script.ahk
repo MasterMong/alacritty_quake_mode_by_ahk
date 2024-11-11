@@ -8,49 +8,37 @@ terminals.wezterm := { path: "C:\Program Files\WezTerm\wezterm-gui.exe"
 terminals.alacritty := { path: "C:\Program Files\Alacritty\alacritty.exe"
                       , title: "ahk_exe alacritty.exe" }
 
-; Read settings or show selection dialog
-global selectedTerminal := ReadOrSelectTerminal()
+; Read all settings from INI file
+settingsFile := A_ScriptDir . "\terminal_settings.ini"
+global selectedTerminal := ReadSetting("SelectedTerminal", "wezterm")
 global terminalPath := terminals[selectedTerminal].path
 global terminalTitle := terminals[selectedTerminal].title
+global terminalHeightPercent := ReadSetting("TerminalHeightPercent", "100")
+global hideOnFocusLost := ReadSetting("HideOnFocusLost", "false")
+global isVisible := WinExist(terminalTitle) ? true : false  ; Initialize visibility state
 
-; Rest of the configuration
-global isVisible := false
-global terminalHeightPercent := 100
-global hideOnFocusLost := false
-
-ReadOrSelectTerminal() {
-    settingsFile := A_ScriptDir . "\terminal_settings.ini"
-    IniRead, selected, %settingsFile%, Settings, SelectedTerminal, none
-    
-    if (selected = "none") {
-        MsgBox, 4, Terminal Selection, Would you like to use WezTerm?`nYes = WezTerm`nNo = Alacritty
-        IfMsgBox Yes
-            selected := "wezterm"
-        else
-            selected := "alacritty"
-        
-        IniWrite, %selected%, %settingsFile%, Settings, SelectedTerminal
-    }
-    
-    return selected
+ReadSetting(key, defaultValue) {
+    global settingsFile
+    IniRead, value, %settingsFile%, Settings, %key%, %defaultValue%
+    return value
 }
 
-; To change terminal later, add this hotkey
+; Replace old ReadOrSelectTerminal with UpdateTerminal
+UpdateTerminal(newTerminal) {
+    global settingsFile, selectedTerminal, terminalPath, terminalTitle, terminals
+    selectedTerminal := newTerminal
+    terminalPath := terminals[selectedTerminal].path
+    terminalTitle := terminals[selectedTerminal].title
+    IniWrite, %selectedTerminal%, %settingsFile%, Settings, SelectedTerminal
+}
+
+; Update terminal switch hotkey
 #+`::
     MsgBox, 4, Change Terminal, Would you like to switch to the other terminal?
     IfMsgBox Yes
     {
-        if (selectedTerminal = "wezterm")
-            selectedTerminal := "alacritty"
-        else
-            selectedTerminal := "wezterm"
-            
-        terminalPath := terminals[selectedTerminal].path
-        terminalTitle := terminals[selectedTerminal].title
-        
-        settingsFile := A_ScriptDir . "\terminal_settings.ini"
-        IniWrite, %selectedTerminal%, %settingsFile%, Settings, SelectedTerminal
-        
+        newTerminal := (selectedTerminal = "wezterm") ? "alacritty" : "wezterm"
+        UpdateTerminal(newTerminal)
         MsgBox, Terminal changed to %selectedTerminal%. Changes will take effect on next toggle.
     }
 return
@@ -64,6 +52,10 @@ return
         SetupTerminal()
         isVisible := true
     } else {
+        if (isVisible) {
+            WinGet, style, Style, %terminalTitle%
+            isVisible := style & 0x10000000  ; Check if window is visible
+        }
         ToggleTerminalVisibility()
     }
 return
