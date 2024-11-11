@@ -4,9 +4,9 @@
 # [terminal.shell]
 # program = "ubuntu"
 
-# [font.normal]
-# family = "FiraCode Nerd Font"
-# style = "Regular"
+[font.normal]
+family = "FiraCode Nerd Font"
+style = "Regular"
 
 [window]
 # Remove dimensions to allow proper maximizing
@@ -26,3 +26,8 @@ resize_increments = false  # Disable character-cell based resizing
 [[keyboard.bindings]]
 key = "F11"
 action = "None"
+
+[[keyboard.bindings]]
+key = "Slash"
+mods = "Control"
+chars = "\u001f"

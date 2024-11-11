@@ -9,7 +9,7 @@ global terminalHeightPercent := 100  ; Set terminal height as a percentage of sc
 global hideOnFocusLost := false  ; Set to true to hide terminal when focus is lost
 
 ; Win + Enter to toggle terminal (# represents the Windows key)
-#Enter::
+#`::
     if (!WinExist(terminalTitle)) {
         Run, %terminalPath%
         WinWait, %terminalTitle%
