@@ -1,12 +1,59 @@
 #SingleInstance Force
 SetWorkingDir %USERPROFILE%
 
-; Configuration
-global terminalPath := "C:\Program Files\Alacritty\alacritty.exe"
-global terminalTitle := "ahk_exe alacritty.exe"
+; Terminal configurations
+global terminals := {}
+terminals.wezterm := { path: "C:\Program Files\WezTerm\wezterm-gui.exe"
+                    , title: "ahk_exe wezterm-gui.exe" }
+terminals.alacritty := { path: "C:\Program Files\Alacritty\alacritty.exe"
+                      , title: "ahk_exe alacritty.exe" }
+
+; Read settings or show selection dialog
+global selectedTerminal := ReadOrSelectTerminal()
+global terminalPath := terminals[selectedTerminal].path
+global terminalTitle := terminals[selectedTerminal].title
+
+; Rest of the configuration
 global isVisible := false
-global terminalHeightPercent := 100  ; Set terminal height as a percentage of screen height
-global hideOnFocusLost := false  ; Set to true to hide terminal when focus is lost
+global terminalHeightPercent := 100
+global hideOnFocusLost := false
+
+ReadOrSelectTerminal() {
+    settingsFile := A_ScriptDir . "\terminal_settings.ini"
+    IniRead, selected, %settingsFile%, Settings, SelectedTerminal, none
+    
+    if (selected = "none") {
+        MsgBox, 4, Terminal Selection, Would you like to use WezTerm?`nYes = WezTerm`nNo = Alacritty
+        IfMsgBox Yes
+            selected := "wezterm"
+        else
+            selected := "alacritty"
+        
+        IniWrite, %selected%, %settingsFile%, Settings, SelectedTerminal
+    }
+    
+    return selected
+}
+
+; To change terminal later, add this hotkey
+#+`::
+    MsgBox, 4, Change Terminal, Would you like to switch to the other terminal?
+    IfMsgBox Yes
+    {
+        if (selectedTerminal = "wezterm")
+            selectedTerminal := "alacritty"
+        else
+            selectedTerminal := "wezterm"
+            
+        terminalPath := terminals[selectedTerminal].path
+        terminalTitle := terminals[selectedTerminal].title
+        
+        settingsFile := A_ScriptDir . "\terminal_settings.ini"
+        IniWrite, %selectedTerminal%, %settingsFile%, Settings, SelectedTerminal
+        
+        MsgBox, Terminal changed to %selectedTerminal%. Changes will take effect on next toggle.
+    }
+return
 
 ; Win + Enter to toggle terminal (# represents the Windows key)
 #`::
