@@ -39,23 +39,31 @@ copy /Y "%CONFIG_ROOT%wezterm.lua" "%WEZTERM_CONFIG%" || (
 )
 copy /Y "%CONFIG_ROOT%alacritty.toml" "%ALACRITTY_CONFIG%"
 
-echo 3. Configuring settings...
+echo 3. Configuring Terminal Settings...
 
-REM Configure settings
-choice /C YN /N /M "Hide terminal when focus is lost? (Y/N): "
+REM Configure Alacritty settings
+choice /C YN /N /M "Hide Alacritty when focus is lost? (Y/N): "
 if errorlevel 2 (
-    set HIDE_ON_FOCUS_LOST=false
+    set ALACRITTY_HIDE_ON_LOST_FOCUS=false
 ) else (
-    set HIDE_ON_FOCUS_LOST=true
+    set ALACRITTY_HIDE_ON_LOST_FOCUS=true
 )
 
-set /P TERMINAL_HEIGHT="Enter terminal height percentage (1-100) [default=100]: "
-if "%TERMINAL_HEIGHT%"=="" set TERMINAL_HEIGHT=100
+choice /C YN /N /M "Hide WezTerm when focus is lost? (Y/N): "
+if errorlevel 2 (
+    set WEZTERM_HIDE_ON_LOST_FOCUS=false
+) else (
+    set WEZTERM_HIDE_ON_LOST_FOCUS=true
+)
+
+set /P ALACRITTY_QUAKE_HEIGHT="Enter Alacritty Quake mode height percentage (1-100) [default=80]: "
+if "%ALACRITTY_QUAKE_HEIGHT%"=="" set ALACRITTY_QUAKE_HEIGHT=80
 
 REM Save settings to ini file
 echo [Settings] > "%SETTINGS_PATH%"
-echo TerminalHeightPercent=%TERMINAL_HEIGHT% >> "%SETTINGS_PATH%"
-echo HideOnFocusLost=%HIDE_ON_FOCUS_LOST% >> "%SETTINGS_PATH%"
+echo AlacrittyQuakeHeight=%ALACRITTY_QUAKE_HEIGHT% >> "%SETTINGS_PATH%"
+echo AlacrittyHideOnLostFocus=%ALACRITTY_HIDE_ON_LOST_FOCUS% >> "%SETTINGS_PATH%"
+echo WeztermHideOnLostFocus=%WEZTERM_HIDE_ON_LOST_FOCUS% >> "%SETTINGS_PATH%"
 
 echo 4. Setting up AutoHotkey startup...
 powershell -command "$ws = New-Object -ComObject WScript.Shell; $s = $ws.CreateShortcut('%AHK_SHORTCUT_PATH%'); $s.TargetPath = '%AHK_SCRIPT_PATH%'; $s.Save()"
