@@ -15,6 +15,10 @@ set AHK_SCRIPT_PATH=%CONFIG_ROOT%autohotkey-script.ahk
 set AHK_SHORTCUT_PATH=%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup\autohotkey-script.lnk
 set SETTINGS_PATH=%CONFIG_ROOT%terminal_settings.ini
 
+REM Terminate existing AutoHotkey script
+taskkill /F /IM "autohotkey.exe" /FI "WINDOWTITLE eq autohotkey-script.ahk" 2>nul
+timeout /t 1 /nobreak >nul
+
 REM Terminal-specific paths
 set WEZTERM_DIR=%USERPROFILE%\.config\wezterm
 set ALACRITTY_DIR=%APPDATA%\alacritty
@@ -67,6 +71,9 @@ echo WeztermHideOnLostFocus=%WEZTERM_HIDE_ON_LOST_FOCUS% >> "%SETTINGS_PATH%"
 
 echo 4. Setting up AutoHotkey startup...
 powershell -command "$ws = New-Object -ComObject WScript.Shell; $s = $ws.CreateShortcut('%AHK_SHORTCUT_PATH%'); $s.TargetPath = '%AHK_SCRIPT_PATH%'; $s.Save()"
+
+echo 5. Restarting AutoHotkey script...
+start "" "%AHK_SCRIPT_PATH%"
 
 echo Setup complete!
 echo - Press Win + ~ to toggle Alacritty in Quake mode
