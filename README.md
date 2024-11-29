@@ -1,61 +1,65 @@
-# TerminalMaster
+# Terminal Configuration Setup
 
-A unified terminal management solution for Windows that combines:
-- Alacritty in Quake mode (drop-down terminal)
-- WezTerm in standard mode
-- Seamless hotkey controls
-- Auto-hide functionality
+This setup includes configuration for both Alacritty and WezTerm terminals with different behaviors:
 
-## Files
-
-- `alacritty.toml`: Alacritty configuration file
-- `wezterm.lua`: WezTerm configuration file
-- `autohotkey-script.ahk`: AutoHotkey script for terminal management
-- `setup-config.bat`: Setup script
-- `terminal_settings.ini`: Settings for terminal behavior
+- **Alacritty**: Runs in Quake-style mode (drops down from top)
+- **WezTerm**: Runs as a normal window
 
 ## Features
 
-- **Alacritty Quake Mode:**
-  - Drops down from top of screen
-  - Configurable height
-  - Always-on-top
-  - Optional auto-hide on focus loss
-  - Toggle with Win + `
+### Alacritty (Quake Mode)
+- Toggle with `Win + ~`
+- Slides down from top of screen
+- Configurable height
+- Optional auto-hide when focus is lost
+- Always on top
 
-- **WezTerm Normal Mode:**
-  - Standard window behavior
-  - Optional auto-hide on focus loss
-  - Toggle with Win + Enter
+### WezTerm (Normal Mode)
+- Toggle with `Win + Enter`
+- Regular window behavior
+- Standard window controls
+
+## Files
+
+- `alacritty.toml`: Alacritty configuration file.
+- `autohotkey-script.ahk`: AutoHotkey script to toggle Alacritty terminal visibility.
+- `setup-config.bat`: Batch file to set up the configuration.
 
 ## Setup Instructions
 
-1. **Prerequisites:**
-   - Install [Alacritty](https://github.com/alacritty/alacritty/releases)
-   - Install [WezTerm](https://wezfurlong.org/wezterm/installation.html)
-   - Install [AutoHotkey](https://www.autohotkey.com/)
+1. **Download and Install Alacritty:**
+   - Download Alacritty from [Alacritty GitHub Releases](https://github.com/alacritty/alacritty/releases).
+   - Install Alacritty on your system.
 
-2. **Installation:**
-   - Clone or download this repository
-   - Run `setup-config.bat` as administrator
-   - Follow the prompts to configure:
-     - Alacritty Quake mode height
-     - Auto-hide behavior for both terminals
+2. **Download and Install AutoHotkey:**
+   - Download AutoHotkey from [AutoHotkey Official Website](https://www.autohotkey.com/).
+   - Install AutoHotkey on your system.
 
-## Configuration
+3. **Run the Setup Script:**
+   - Place `alacritty.toml`, `autohotkey-script.ahk`, and `setup-config.bat` in the same directory.
+   - Run `setup-config.bat` by double-clicking it.
+   - The script will:
+     - Copy `alacritty.toml` to `%APPDATA%\alacritty\alacritty.toml`.
+     - Create a shortcut for `autohotkey-script.ahk` in the startup folder.
 
-### Settings (terminal_settings.ini)
-- `AlacrittyQuakeHeight`: Height percentage for Quake mode (1-100)
-- `AlacrittyHideOnLostFocus`: Auto-hide Alacritty when losing focus
-- `WeztermHideOnLostFocus`: Auto-hide WezTerm when losing focus
+4. **Configure Terminal Height (Optional):**
+   - Open `autohotkey-script.ahk` in a text editor.
+   - Modify the `terminalHeightPercent` variable to set the terminal height as a percentage of the screen height. For example, to set the terminal height to 50% of the screen height, set `terminalHeightPercent := 50`.
 
-## Keyboard Shortcuts
+## Usage
 
-- `Win + ~`: Toggle Alacritty (Quake mode)
-- `Win + Enter`: Toggle WezTerm
+- **Toggle Terminal Visibility:**
+  - Press `Win + Enter` to toggle the visibility of the Alacritty terminal.
+
+- **Hide Terminal When Focus is Lost (Optional):**
+  - The script includes an optional feature to hide the terminal when it loses focus. This feature is enabled by default.
+
+## Notes
+
+- Ensure that the paths in the script match the installation paths of Alacritty and AutoHotkey on your system.
+- You can customize the script further as per your requirements.
 
 ## Troubleshooting
 
-- If terminals don't respond: Restart the AutoHotkey script
-- If settings don't apply: Check terminal_settings.ini permissions
-- For other issues: Rerun setup-config.bat as administrator
+- If the setup script fails to create the Alacritty configuration directory, ensure that you have the necessary permissions to create directories in `%APPDATA%`.
+- If the terminal does not toggle as expected, verify that the `terminalPath` and `terminalTitle` variables in `autohotkey-script.ahk` are set correctly.

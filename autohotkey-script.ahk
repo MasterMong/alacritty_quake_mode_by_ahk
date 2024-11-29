@@ -5,25 +5,22 @@ SetWorkingDir %USERPROFILE%
 global terminals := {}
 terminals.wezterm := { path: "C:\Program Files\WezTerm\wezterm-gui.exe"
                     , title: "ahk_class org.wezfurlong.wezterm ahk_exe wezterm-gui.exe"
-                    , isVisible: false
-                    , config: { hideOnLostFocus: ReadSetting("WeztermHideOnLostFocus", "false") } }
+                    , isVisible: false }  ; Add visibility tracking for WezTerm
 terminals.alacritty := { path: "C:\Program Files\Alacritty\alacritty.exe"
                       , title: "ahk_exe alacritty.exe"
-                      , pid: 0
-                      , isVisible: false
-                      , isQuake: true
-                      , config: { quakeHeight: ReadSetting("AlacrittyQuakeHeight", "80")
-                              , hideOnLostFocus: ReadSetting("AlacrittyHideOnLostFocus", "false") } }
+                      , pid: 0 }  ; Track Alacritty PID
 
 ; Read settings from INI file
 settingsFile := A_ScriptDir . "\terminal_settings.ini"
-global quakeConfig := { heightPercent: ReadSetting("QuakeHeightPercent", "100")
-                     , hideOnFocusLost: ReadSetting("QuakeHideOnFocusLost", "false") }
+global terminalHeightPercent := ReadSetting("AlacrittyQuakeHeight", "100")
+global hideOnFocusLost := ReadSetting("AlacrittyHideOnFocusLost", "false")
+global isVisible := false
 
 ReadSetting(key, defaultValue) {
     global settingsFile
     IniRead, value, %settingsFile%, Settings, %key%, %defaultValue%
-    if (InStr(key, "HideOnLostFocus"))
+    ; Convert string boolean to actual boolean
+    if (key = "HideOnFocusLost")
         return (value = "true" || value = "1")
     return value
 }
@@ -36,18 +33,10 @@ ReadSetting(key, defaultValue) {
     DetectHiddenWindows, On
     if (terminals.alacritty.pid) {
         if (WinExist("ahk_pid " . terminals.alacritty.pid)) {
-            if (terminals.alacritty.isVisible) {
-                WinHide, % "ahk_pid " . terminals.alacritty.pid
-                terminals.alacritty.isVisible := false
-            } else {
-                WinShow, % "ahk_pid " . terminals.alacritty.pid
-                WinActivate, % "ahk_pid " . terminals.alacritty.pid
-                SetupTerminal()
-                terminals.alacritty.isVisible := true
-            }
+            ToggleTerminalVisibility()
         } else {
+            ; Previous instance no longer exists, start new one
             terminals.alacritty.pid := 0
-            terminals.alacritty.isVisible := false
         }
     }
     
@@ -59,7 +48,7 @@ ReadSetting(key, defaultValue) {
         SetupTerminal()
         WinShow, ahk_pid %launchedPID%
         WinActivate, ahk_pid %launchedPID%
-        terminals.alacritty.isVisible := true
+        isVisible := true
     }
     DetectHiddenWindows, Off
 return
@@ -97,14 +86,27 @@ SetupTerminal() {
     ; Calculate dimensions
     workAreaWidth := WorkAreaRight - WorkAreaLeft
     workAreaHeight := WorkAreaBottom - WorkAreaTop
-    desiredHeight := workAreaHeight * (terminals.alacritty.config.quakeHeight / 100)
+    desiredHeight := workAreaHeight * (terminalHeightPercent / 100)
     
-    ; Only apply Quake-mode styling to Alacritty
-    targetWindow := "ahk_pid " . terminals.alacritty.pid
-    WinSet, Style, -0xC00000, %targetWindow%
-    WinSet, Style, -0x40000, %targetWindow%
-    WinMove, %targetWindow%, , WorkAreaLeft, WorkAreaTop, workAreaWidth, desiredHeight
-    WinSet, AlwaysOnTop, On, %targetWindow%
+    if (terminalTitle = terminals.wezterm.title) {
+        ; WezTerm specific handling
+        WinSet, Style, -0x80000, %terminalTitle%  ; Remove minimize/maximize buttons
+        WinSet, Style, -0x40000, %terminalTitle%  ; Remove sizing border
+        WinSet, Style, -0xC00000, %terminalTitle% ; Remove title bar
+        WinMove, %terminalTitle%, , WorkAreaLeft, WorkAreaTop, workAreaWidth, desiredHeight
+        
+        ; Force redraw to prevent visual glitches
+        WinHide, %terminalTitle%
+        Sleep, 10
+        WinShow, %terminalTitle%
+    } else {
+        ; Alacritty handling - use PID for precise window control
+        targetWindow := "ahk_pid " . terminals.alacritty.pid
+        WinSet, Style, -0xC00000, %targetWindow%
+        WinSet, Style, -0x40000, %targetWindow%
+        WinMove, %targetWindow%, , WorkAreaLeft, WorkAreaTop, workAreaWidth, desiredHeight
+        WinSet, AlwaysOnTop, On, %targetWindow%
+    }
 }
 
 ; Function to toggle terminal visibility
@@ -136,31 +138,30 @@ ToggleTerminalVisibility() {
     DetectHiddenWindows, Off
 }
 
-; Optional: Hide terminals when focus is lost
-#if
+; Optional: Hide terminal when focus is lost (updated for both terminals)
+#if hideOnFocusLost
 ~LButton::
     MouseGetPos,,, WindowUnderMouse
     DetectHiddenWindows, On
     
-    ; Handle Alacritty focus loss
-    if (terminals.alacritty.config.hideOnLostFocus && terminals.alacritty.pid) {
+    ; Check Alacritty
+    if (terminals.alacritty.pid) {
         alacrittyWin := "ahk_pid " . terminals.alacritty.pid
         if (WinExist(alacrittyWin) && WindowUnderMouse != WinExist(alacrittyWin)) {
             WinHide, %alacrittyWin%
-            terminals.alacritty.isVisible := false
+            isVisible := false
         }
     }
     
-    ; Handle WezTerm focus loss
-    if (terminals.wezterm.config.hideOnLostFocus) {
-        if (WinExist(terminals.wezterm.title) && WindowUnderMouse != WinExist(terminals.wezterm.title)) {
-            WinHide, % terminals.wezterm.title
-            terminals.wezterm.isVisible := false
-        }
+    ; Check WezTerm
+    if (WinExist(terminals.wezterm.title) && WindowUnderMouse != WinExist(terminals.wezterm.title)) {
+        WinHide, % terminals.wezterm.title
+        terminals.wezterm.isVisible := false
     }
     
     DetectHiddenWindows, Off
 return
+#if
 
 ; Clean up on script exit
 OnExit(func("ExitFunc"))

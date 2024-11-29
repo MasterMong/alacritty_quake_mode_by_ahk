@@ -12,7 +12,7 @@ config.window_close_confirmation = 'NeverPrompt'
 
 -- Color scheme and opacity
 config.color_scheme = 'Dracula'
-config.window_background_opacity = 0.8
+config.window_background_opacity = 0.95
 
 -- Font configuration
 config.font = wezterm.font('JetBrains Mono')
