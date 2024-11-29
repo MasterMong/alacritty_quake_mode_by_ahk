@@ -4,7 +4,7 @@ SetWorkingDir %USERPROFILE%
 ; Terminal configurations
 global terminals := {}
 terminals.wezterm := { path: "C:\Program Files\WezTerm\wezterm-gui.exe"
-                    , title: "ahk_exe wezterm-gui.exe" }
+                    , title: "ahk_class org.wezfurlong.wezterm ahk_exe wezterm-gui.exe" }
 terminals.alacritty := { path: "C:\Program Files\Alacritty\alacritty.exe"
                       , title: "ahk_exe alacritty.exe" }
 
@@ -43,8 +43,11 @@ UpdateTerminal(newTerminal) {
     }
 return
 
-; Win + Enter to toggle terminal (# represents the Windows key)
-#`::
+; Win + ~ to start Alacritty
+#`:: 
+    selectedTerminal := "alacritty"
+    terminalPath := terminals[selectedTerminal].path
+    terminalTitle := terminals[selectedTerminal].title
     if (!WinExist(terminalTitle)) {
         Run, %terminalPath%
         WinWait, %terminalTitle%
@@ -52,12 +55,26 @@ return
         SetupTerminal()
         isVisible := true
     } else {
-        if (isVisible) {
-            WinGet, style, Style, %terminalTitle%
-            isVisible := style & 0x10000000  ; Check if window is visible
-        }
         ToggleTerminalVisibility()
     }
+return
+
+; Win + Enter to start WezTerm in normal mode
+#Enter::
+    selectedTerminal := "wezterm"
+    terminalPath := terminals[selectedTerminal].path
+    terminalTitle := terminals[selectedTerminal].title
+    
+    DetectHiddenWindows, On
+    SetTitleMatchMode, 2
+    
+    if (!WinExist(terminalTitle)) {
+        Run, %terminalPath%
+        WinWait, %terminalTitle%,, 10
+    }
+    WinShow, %terminalTitle%
+    WinActivate, %terminalTitle%
+    DetectHiddenWindows, Off
 return
 
 ; Function to set up terminal window position and size

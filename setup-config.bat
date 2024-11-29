@@ -1,34 +1,54 @@
 @echo off
+setlocal EnableDelayedExpansion
+
+REM Check for admin privileges and elevate if needed
+net session >nul 2>&1
+if %errorLevel% neq 0 (
+    echo Requesting administrative privileges...
+    powershell -Command "Start-Process '%~dpnx0' -Verb RunAs"
+    exit /b
+)
 
 REM Set common paths
-set AHK_SCRIPT_PATH=%~dp0autohotkey-script.ahk
+set CONFIG_ROOT=%~dp0
+set AHK_SCRIPT_PATH=%CONFIG_ROOT%autohotkey-script.ahk
 set AHK_SHORTCUT_PATH=%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup\autohotkey-script.lnk
-set SETTINGS_PATH=%~dp0terminal_settings.ini
+set SETTINGS_PATH=%CONFIG_ROOT%terminal_settings.ini
 
 REM Terminal-specific paths
-set ALACRITTY_CONFIG_PATH=%APPDATA%\alacritty\alacritty.toml
-set WEZTERM_CONFIG_PATH=%USERPROFILE%\.config\wezterm\wezterm.lua
+set WEZTERM_DIR=%USERPROFILE%\.config\wezterm
+set ALACRITTY_DIR=%APPDATA%\alacritty
+set WEZTERM_CONFIG=%WEZTERM_DIR%\wezterm.lua
+set ALACRITTY_CONFIG=%ALACRITTY_DIR%\alacritty.toml
+
+echo Terminal Configuration Setup
+echo --------------------------
+echo 1. Setting up directories...
+
+REM Create config directories with proper permissions
+mkdir "%WEZTERM_DIR%" 2>nul
+icacls "%WEZTERM_DIR%" /grant:r "%USERNAME%":(OI)(CI)F /T
+
+mkdir "%ALACRITTY_DIR%" 2>nul
+icacls "%ALACRITTY_DIR%" /grant:r "%USERNAME%":(OI)(CI)F /T
+
+echo 2. Copying configuration files...
+copy /Y "%CONFIG_ROOT%wezterm.lua" "%WEZTERM_CONFIG%" || (
+    echo Error copying WezTerm config. Retrying with elevated privileges...
+    powershell -Command "Copy-Item -Path '%CONFIG_ROOT%wezterm.lua' -Destination '%WEZTERM_CONFIG%' -Force"
+)
+copy /Y "%CONFIG_ROOT%alacritty.toml" "%ALACRITTY_CONFIG%"
+
+echo 3. Configuring settings...
 
 REM Ask user for preferred terminal
 choice /C WA /N /M "Choose your terminal [W]ezTerm or [A]lacritty: "
 if errorlevel 2 (
     set SELECTED_TERMINAL=alacritty
     echo Setting up Alacritty...
-    
-    REM Create alacritty config directory if it doesn't exist
-    if not exist %APPDATA%\alacritty mkdir %APPDATA%\alacritty
-    
-    REM Copy alacritty config
-    copy /Y "%~dp0alacritty.toml" "%ALACRITTY_CONFIG_PATH%"
 ) else (
     set SELECTED_TERMINAL=wezterm
     echo Setting up WezTerm...
-    
-    REM Create wezterm config directory if it doesn't exist
-    if not exist %USERPROFILE%\.config\wezterm mkdir %USERPROFILE%\.config\wezterm
-    
-    REM Copy wezterm config
-    copy /Y "%~dp0wezterm.lua" "%WEZTERM_CONFIG_PATH%"
 )
 
 REM Configure additional settings
@@ -48,8 +68,10 @@ echo SelectedTerminal=%SELECTED_TERMINAL% >> "%SETTINGS_PATH%"
 echo TerminalHeightPercent=%TERMINAL_HEIGHT% >> "%SETTINGS_PATH%"
 echo HideOnFocusLost=%HIDE_ON_FOCUS_LOST% >> "%SETTINGS_PATH%"
 
-REM Create AutoHotkey startup shortcut
+echo 4. Setting up AutoHotkey startup...
 powershell -command "$ws = New-Object -ComObject WScript.Shell; $s = $ws.CreateShortcut('%AHK_SHORTCUT_PATH%'); $s.TargetPath = '%AHK_SCRIPT_PATH%'; $s.Save()"
 
-echo Setup complete. Selected terminal: %SELECTED_TERMINAL%
+echo Setup complete!
+echo - Press Win + ~ to toggle Alacritty in Quake mode
+echo - Press Win + Enter to open WezTerm in normal mode
 pause
