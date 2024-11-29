@@ -41,17 +41,7 @@ copy /Y "%CONFIG_ROOT%alacritty.toml" "%ALACRITTY_CONFIG%"
 
 echo 3. Configuring settings...
 
-REM Ask user for preferred terminal
-choice /C WA /N /M "Choose your terminal [W]ezTerm or [A]lacritty: "
-if errorlevel 2 (
-    set SELECTED_TERMINAL=alacritty
-    echo Setting up Alacritty...
-) else (
-    set SELECTED_TERMINAL=wezterm
-    echo Setting up WezTerm...
-)
-
-REM Configure additional settings
+REM Configure settings
 choice /C YN /N /M "Hide terminal when focus is lost? (Y/N): "
 if errorlevel 2 (
     set HIDE_ON_FOCUS_LOST=false
@@ -62,9 +52,8 @@ if errorlevel 2 (
 set /P TERMINAL_HEIGHT="Enter terminal height percentage (1-100) [default=100]: "
 if "%TERMINAL_HEIGHT%"=="" set TERMINAL_HEIGHT=100
 
-REM Save all settings to ini file
+REM Save settings to ini file
 echo [Settings] > "%SETTINGS_PATH%"
-echo SelectedTerminal=%SELECTED_TERMINAL% >> "%SETTINGS_PATH%"
 echo TerminalHeightPercent=%TERMINAL_HEIGHT% >> "%SETTINGS_PATH%"
 echo HideOnFocusLost=%HIDE_ON_FOCUS_LOST% >> "%SETTINGS_PATH%"
 

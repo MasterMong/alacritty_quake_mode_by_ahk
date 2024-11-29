@@ -6,16 +6,14 @@ global terminals := {}
 terminals.wezterm := { path: "C:\Program Files\WezTerm\wezterm-gui.exe"
                     , title: "ahk_class org.wezfurlong.wezterm ahk_exe wezterm-gui.exe" }
 terminals.alacritty := { path: "C:\Program Files\Alacritty\alacritty.exe"
-                      , title: "ahk_exe alacritty.exe" }
+                      , title: "ahk_exe alacritty.exe"
+                      , pid: 0 }  ; Track Alacritty PID
 
-; Read all settings from INI file
+; Read settings from INI file
 settingsFile := A_ScriptDir . "\terminal_settings.ini"
-global selectedTerminal := ReadSetting("SelectedTerminal", "wezterm")
-global terminalPath := terminals[selectedTerminal].path
-global terminalTitle := terminals[selectedTerminal].title
 global terminalHeightPercent := ReadSetting("TerminalHeightPercent", "100")
 global hideOnFocusLost := ReadSetting("HideOnFocusLost", "false")
-global isVisible := WinExist(terminalTitle) ? true : false  ; Initialize visibility state
+global isVisible := false
 
 ReadSetting(key, defaultValue) {
     global settingsFile
@@ -23,47 +21,38 @@ ReadSetting(key, defaultValue) {
     return value
 }
 
-; Replace old ReadOrSelectTerminal with UpdateTerminal
-UpdateTerminal(newTerminal) {
-    global settingsFile, selectedTerminal, terminalPath, terminalTitle, terminals
-    selectedTerminal := newTerminal
-    terminalPath := terminals[selectedTerminal].path
-    terminalTitle := terminals[selectedTerminal].title
-    IniWrite, %selectedTerminal%, %settingsFile%, Settings, SelectedTerminal
-}
-
-; Update terminal switch hotkey
-#+`::
-    MsgBox, 4, Change Terminal, Would you like to switch to the other terminal?
-    IfMsgBox Yes
-    {
-        newTerminal := (selectedTerminal = "wezterm") ? "alacritty" : "wezterm"
-        UpdateTerminal(newTerminal)
-        MsgBox, Terminal changed to %selectedTerminal%. Changes will take effect on next toggle.
-    }
-return
-
 ; Win + ~ to start Alacritty
 #`:: 
-    selectedTerminal := "alacritty"
-    terminalPath := terminals[selectedTerminal].path
-    terminalTitle := terminals[selectedTerminal].title
-    if (!WinExist(terminalTitle)) {
-        Run, %terminalPath%
-        WinWait, %terminalTitle%
+    terminalPath := terminals.alacritty.path
+    terminalTitle := terminals.alacritty.title
+    
+    DetectHiddenWindows, On
+    if (terminals.alacritty.pid) {
+        if (WinExist("ahk_pid " . terminals.alacritty.pid)) {
+            ToggleTerminalVisibility()
+        } else {
+            ; Previous instance no longer exists, start new one
+            terminals.alacritty.pid := 0
+        }
+    }
+    
+    if (!terminals.alacritty.pid) {
+        Run, %terminalPath%,, Hide, launchedPID
+        terminals.alacritty.pid := launchedPID
+        WinWait, ahk_pid %launchedPID%
         Sleep, 100
         SetupTerminal()
+        WinShow, ahk_pid %launchedPID%
+        WinActivate, ahk_pid %launchedPID%
         isVisible := true
-    } else {
-        ToggleTerminalVisibility()
     }
+    DetectHiddenWindows, Off
 return
 
 ; Win + Enter to start WezTerm in normal mode
 #Enter::
-    selectedTerminal := "wezterm"
-    terminalPath := terminals[selectedTerminal].path
-    terminalTitle := terminals[selectedTerminal].title
+    terminalPath := terminals.wezterm.path
+    terminalTitle := terminals.wezterm.title
     
     DetectHiddenWindows, On
     SetTitleMatchMode, 2
@@ -87,7 +76,7 @@ SetupTerminal() {
     workAreaHeight := WorkAreaBottom - WorkAreaTop
     desiredHeight := workAreaHeight * (terminalHeightPercent / 100)
     
-    if (selectedTerminal = "wezterm") {
+    if (terminalTitle = terminals.wezterm.title) {
         ; WezTerm specific handling
         WinSet, Style, -0x80000, %terminalTitle%  ; Remove minimize/maximize buttons
         WinSet, Style, -0x40000, %terminalTitle%  ; Remove sizing border
@@ -99,36 +88,42 @@ SetupTerminal() {
         Sleep, 10
         WinShow, %terminalTitle%
     } else {
-        ; Alacritty handling
-        WinSet, Style, -0xC00000, %terminalTitle%
-        WinSet, Style, -0x40000, %terminalTitle%
-        WinMove, %terminalTitle%, , WorkAreaLeft, WorkAreaTop, workAreaWidth, desiredHeight
+        ; Alacritty handling - use PID for precise window control
+        targetWindow := "ahk_pid " . terminals.alacritty.pid
+        WinSet, Style, -0xC00000, %targetWindow%
+        WinSet, Style, -0x40000, %targetWindow%
+        WinMove, %targetWindow%, , WorkAreaLeft, WorkAreaTop, workAreaWidth, desiredHeight
+        WinSet, AlwaysOnTop, On, %targetWindow%
     }
-    
-    ; Ensure window is on top
-    WinSet, AlwaysOnTop, On, %terminalTitle%
 }
 
 ; Function to toggle terminal visibility
 ToggleTerminalVisibility() {
-    if (isVisible) {
-        if (selectedTerminal = "wezterm") {
-            ; Store window position before hiding
-            WinGetPos, lastX, lastY, lastW, lastH, %terminalTitle%
+    DetectHiddenWindows, On
+    targetWindow := (terminalTitle = terminals.alacritty.title) 
+        ? "ahk_pid " . terminals.alacritty.pid 
+        : terminalTitle
+
+    if (!WinExist(targetWindow)) {
+        ; Window no longer exists, reset state
+        isVisible := false
+        if (terminalTitle = terminals.alacritty.title) {
+            terminals.alacritty.pid := 0
         }
-        WinHide, %terminalTitle%
+        DetectHiddenWindows, Off
+        return
+    }
+
+    if (isVisible) {
+        WinHide, %targetWindow%
         isVisible := false
     } else {
-        WinShow, %terminalTitle%
-        WinActivate, %terminalTitle%
-        if (selectedTerminal = "wezterm") {
-            ; Restore last position and force redraw
-            WinMove, %terminalTitle%, , lastX, lastY, lastW, lastH
-            Sleep, 10
-        }
+        WinShow, %targetWindow%
+        WinActivate, %targetWindow%
         SetupTerminal()
         isVisible := true
     }
+    DetectHiddenWindows, Off
 }
 
 ; Optional: Hide terminal when focus is lost
@@ -140,3 +135,12 @@ ToggleTerminalVisibility() {
         isVisible := false
     }
 return
+
+; Clean up on script exit
+OnExit(func("ExitFunc"))
+
+ExitFunc() {
+    if (terminals.alacritty.pid) {
+        Process, Close, % terminals.alacritty.pid
+    }
+}
