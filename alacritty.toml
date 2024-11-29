@@ -13,7 +13,7 @@ style = "Regular"
 # dimensions = { columns = 82, lines = 24 } 
 padding = { x = 0, y = 0 }
 decorations = "None"
-opacity = 0.95
+opacity = 0.8
 dynamic_title = false
 position = { x = 0, y = 0 }
 startup_mode = "Maximized"
@@ -31,3 +31,6 @@ action = "None"
 key = "Slash"
 mods = "Control"
 chars = "\u001f"
+
+[colors]
+primary.background = '0x000000'
