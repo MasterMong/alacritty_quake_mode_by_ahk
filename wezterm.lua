@@ -1,8 +1,7 @@
 local wezterm = require 'wezterm'
 local config = wezterm.config_builder()
 
--- Set specific window class and title for easier identification
-config.window_class = 'WezTerm'
+-- Window appearance settings
 config.window_decorations = "INTEGRATED_BUTTONS"
 config.initial_rows = 30
 config.initial_cols = 120
