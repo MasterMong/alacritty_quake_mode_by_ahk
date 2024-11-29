@@ -1,6 +1,10 @@
-# Terminal Configuration Setup
+# TerminalMaster
 
-This setup includes configuration for both Alacritty (in Quake mode) and WezTerm terminals with AutoHotkey integration.
+A unified terminal management solution for Windows that combines:
+- Alacritty in Quake mode (drop-down terminal)
+- WezTerm in standard mode
+- Seamless hotkey controls
+- Auto-hide functionality
 
 ## Files
 
